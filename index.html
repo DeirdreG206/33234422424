@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grant Application Review Dashboard</title>
+  <!-- Import a friendly sans‑serif font. Proxima Nova is a paid font so we
+       request it with a fallback to system fonts. If the font isn't
+       available on the user's system the fallbacks still look clean. -->
+  <style>
+    @font-face {
+      font-family: "Proxima Nova";
+      /* Use a generic sans‑serif font as a fallback. */
+      src: local("Proxima Nova"), local("ProximaNova");
+    }
+    :root {
+      --color-dark: #0c426a;
+      --color-light: #6db3e2;
+      --color-bg: #ffffff;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: "Proxima Nova", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-dark);
+    }
+    #app {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* Sidebar styling */
+    #sidebar {
+      width: 280px;
+      background-color: #f7fbfe;
+      border-right: 1px solid #d1e5f2;
+      display: flex;
+      flex-direction: column;
+    }
+    #sidebar header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem;
+      border-bottom: 1px solid #e0eff7;
+    }
+    #sidebar h1 {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin: 0;
+      color: var(--color-dark);
+    }
+    #export-btn {
+      background-color: var(--color-dark);
+      color: white;
+      border: none;
+      padding: 0.4rem 0.7rem;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #export-btn:hover {
+      background-color: #093655;
+    }
+    .category {
+      padding: 0.5rem 1rem;
+    }
+    .category-name {
+      font-weight: bold;
+      font-size: 0.95rem;
+      margin-top: 1rem;
+      color: var(--color-dark);
+    }
+    .org-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0.2rem 0;
+    }
+    .org-item {
+      padding: 0.3rem 0.5rem;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      color: var(--color-dark);
+    }
+    .org-item:hover {
+      background-color: #e8f2fa;
+    }
+    .org-item.selected {
+      background-color: #d1e5f2;
+      font-weight: bold;
+    }
+    /* Main content area */
+    #main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+    #org-title {
+      font-size: 1.6rem;
+      font-weight: bold;
+      margin-bottom: 0.3rem;
+      color: var(--color-dark);
+    }
+    #org-category {
+      font-size: 1rem;
+      font-weight: normal;
+      margin-bottom: 1rem;
+      color: var(--color-light);
+    }
+    .detail-table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .detail-table th,
+    .detail-table td {
+      text-align: left;
+      padding: 0.4rem 0.6rem;
+      border-bottom: 1px solid #e0eff7;
+      vertical-align: top;
+    }
+    .detail-table th {
+      width: 25%;
+      font-weight: bold;
+      color: var(--color-dark);
+    }
+    .detail-table td {
+      color: var(--color-dark);
+    }
+    .reviewer-section {
+      margin-bottom: 1.5rem;
+    }
+    .reviewer-name {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 0.4rem;
+      color: var(--color-dark);
+    }
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 0.8rem;
+      align-items: flex-start;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-right: 2rem;
+      margin-bottom: 0.8rem;
+    }
+    .form-group label {
+      font-size: 0.85rem;
+      margin-bottom: 0.2rem;
+      color: var(--color-dark);
+    }
+    .form-group textarea {
+      resize: vertical;
+      min-height: 70px;
+      max-height: 150px;
+      width: 240px;
+      padding: 0.3rem;
+      border: 1px solid #bfd9ea;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
+    .form-group select,
+    .form-group input[type="text"] {
+      padding: 0.35rem 0.4rem;
+      border: 1px solid #bfd9ea;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      width: 140px;
+    }
+    .form-group input[type="text"] {
+      max-width: 140px;
+    }
+    .form-group select {
+      max-width: 140px;
+    }
+    .export-info {
+      font-size: 0.8rem;
+      color: var(--color-light);
+    }
+    /* Table styling in export tab */
+    #export-table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    #export-table th,
+    #export-table td {
+      border: 1px solid #cccccc;
+      padding: 0.4rem;
+      font-size: 0.8rem;
+    }
+    #export-table th {
+      background-color: #e6f3fb;
+      font-weight: bold;
+    }
+  </style>
+
+<!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">URVVQVR5DMS4-1123103481-126705</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">e4e6ff9d-81e8-4a4c-b380-71843256e1f0</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://phimnw.sharepoint.com/sites/PM-NWData/_layouts/15/DocIdRedir.aspx?ID=URVVQVR5DMS4-1123103481-126705, URVVQVR5DMS4-1123103481-126705</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <header>
+        <h1>Organizations</h1>
+        <button id="export-btn" title="Export applications and notes">Export</button>
+      </header>
+      <div id="org-list-container" style="overflow-y: auto; flex: 1;"></div>
+    </aside>
+    <main id="main">
+      <div id="placeholder" style="color: var(--color-light); font-size: 1.1rem;">Select an organization from the left to view its details and enter notes.</div>
+      <div id="org-details" style="display: none;"></div>
+    </main>
+  </div>
+  <!-- SheetJS library for exporting to XLSX -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- External dataset definition. This file defines the global `dataset` array. -->
+  <script src="dataset.js"></script>
+  <script>
+    // === DATA SETUP ===
+    // Dataset is inlined here to avoid asynchronous loading complexity. It is generated
+    // from the provided spreadsheet. Each record corresponds to one application.
+    // The variable `dataset` is defined externally in dataset.js.
+
+    // Clean categories and build grouping.
+    function buildCategoryMap() {
+      const map = {};
+      dataset.forEach(rec => {
+        let cat = rec['Category'] || 'Uncategorized';
+        cat = cat.trim();
+        if (!map[cat]) map[cat] = [];
+        map[cat].push(rec);
+      });
+      // Sort organizations inside each category alphabetically by Organization name
+      Object.keys(map).forEach(cat => {
+        map[cat].sort((a, b) => {
+          const aName = (a['Organization'] || '').toLowerCase();
+          const bName = (b['Organization'] || '').toLowerCase();
+          return aName.localeCompare(bName);
+        });
+      });
+      return map;
+    }
+
+    const categoryMap = buildCategoryMap();
+    const orgListContainer = document.getElementById('org-list-container');
+    const orgDetailsDiv = document.getElementById('org-details');
+    const placeholderDiv = document.getElementById('placeholder');
+
+    // Render the sidebar with categories and organization names
+    function renderSidebar() {
+      // Sort categories alphabetically
+      const categories = Object.keys(categoryMap).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+      categories.forEach(cat => {
+        const catDiv = document.createElement('div');
+        catDiv.className = 'category';
+        const catName = document.createElement('div');
+        catName.className = 'category-name';
+        catName.textContent = cat;
+        catDiv.appendChild(catName);
+        const ul = document.createElement('ul');
+        ul.className = 'org-list';
+        categoryMap[cat].forEach(rec => {
+          const li = document.createElement('li');
+          li.className = 'org-item';
+          li.textContent = rec['Organization'];
+          li.dataset.id = rec['No'];
+          li.addEventListener('click', () => selectOrganization(rec['No'], li));
+          ul.appendChild(li);
+        });
+        catDiv.appendChild(ul);
+        orgListContainer.appendChild(catDiv);
+      });
+    }
+
+    // Helper: clear selected class from all org items
+    function clearSelection() {
+      document.querySelectorAll('.org-item').forEach(item => item.classList.remove('selected'));
+    }
+
+    // Select an organization by its unique number
+    function selectOrganization(no, clickedElement) {
+      // remove highlight from others
+      clearSelection();
+      if (clickedElement) clickedElement.classList.add('selected');
+      // find record
+      const rec = dataset.find(item => item['No'] === no);
+      if (!rec) return;
+      placeholderDiv.style.display = 'none';
+      orgDetailsDiv.style.display = 'block';
+      // Render details
+      renderOrgDetails(rec);
+    }
+
+    // Format numbers as currency with dollar sign and no decimals
+    function formatCurrency(value) {
+      const num = Number(value);
+      if (isNaN(num)) return value;
+      return '$' + num.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+
+    // Determine if a value appears to be a URL. This returns true
+    // for strings that either already start with http/https or look
+    // like domain names without any whitespace (e.g. example.com).
+    function isURL(val) {
+      if (typeof val !== 'string') return false;
+      const trimmed = val.trim();
+      // If it starts with http or https, definitely a URL
+      if (/^https?:\/\//i.test(trimmed)) return true;
+      // If it contains at least one dot and has no spaces, consider it a URL
+      if (trimmed.includes('.') && !/\s/.test(trimmed)) return true;
+      return false;
+    }
+
+    // Given a string that appears to be a URL, ensure it has an http/https
+    // prefix so that the link works. If it already has one, return as is.
+    function ensureProtocol(val) {
+      const trimmed = String(val).trim();
+      if (/^https?:\/\//i.test(trimmed)) return trimmed;
+      return 'https://' + trimmed;
+    }
+
+    // Render organization details and reviewer forms
+    function renderOrgDetails(rec) {
+      orgDetailsDiv.innerHTML = '';
+      // Title
+      const title = document.createElement('div');
+      title.id = 'org-title';
+      title.textContent = rec['Organization'] || '';
+      orgDetailsDiv.appendChild(title);
+      // Category (subheading)
+      const cat = document.createElement('div');
+      cat.id = 'org-category';
+      cat.textContent = (rec['Category'] || '').trim();
+      orgDetailsDiv.appendChild(cat);
+      // Details table
+      const table = document.createElement('table');
+      table.className = 'detail-table';
+      // unify duplicates
+      const processedDup = {};
+      const skipFields = new Set(['No','Organization','Category']);
+      Object.keys(rec).forEach(key => {
+        if (skipFields.has(key)) return;
+        const value = rec[key];
+        if (value === null || value === '' || value === undefined) return;
+        // unify duplicates
+        let displayName = key;
+        if (key === 'Project Budget' || key === 'Project_Budget') {
+          if (processedDup['Project Budget']) return;
+          displayName = 'Project Budget';
+          processedDup['Project Budget'] = true;
+        }
+        // Rename certain fields to improve readability
+        if (key === 'SupportType') {
+          displayName = 'Support Type';
+        }
+        // Some spreadsheet exports include a trailing space on this column name
+        if (key.trim() === 'Proj_Budget_Upload') {
+          displayName = 'Project Description';
+        }
+        // Format value: numeric fields show as currency for certain columns
+        let formatted = value;
+        // Identify potential numeric fields for currency: Request, Org_Budget, Project Budget, Project_Budget
+        const currencyFields = ['Request', 'Org_Budget', 'Project Budget', 'Project_Budget'];
+        if (currencyFields.includes(key) || currencyFields.includes(displayName)) {
+          formatted = formatCurrency(value);
+        }
+        // For URLs, create link
+        let htmlVal;
+        if (isURL(value)) {
+          const link = document.createElement('a');
+          const href = ensureProtocol(value);
+          link.href = href;
+          link.textContent = value;
+          link.target = '_blank';
+          htmlVal = link.outerHTML;
+        } else {
+          // Escape HTML special characters and preserve line breaks
+          htmlVal = String(formatted)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\r?\n/g, '<br>');
+        }
+        const tr = document.createElement('tr');
+        const th = document.createElement('th');
+        th.textContent = displayName.replace(/_/g, ' ');
+        const td = document.createElement('td');
+        td.innerHTML = htmlVal;
+        tr.appendChild(th);
+        tr.appendChild(td);
+        table.appendChild(tr);
+      });
+      orgDetailsDiv.appendChild(table);
+      // Reviewer sections
+      const reviewers = ['JT','FW','GP'];
+      reviewers.forEach(reviewer => {
+        const section = document.createElement('div');
+        section.className = 'reviewer-section';
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'reviewer-name';
+        nameDiv.textContent = reviewer;
+        section.appendChild(nameDiv);
+        const formRow = document.createElement('div');
+        formRow.className = 'form-row';
+        // Comment
+        const commentGroup = document.createElement('div');
+        commentGroup.className = 'form-group';
+        const commentLabel = document.createElement('label');
+        commentLabel.textContent = 'Comment';
+        const commentInput = document.createElement('textarea');
+        commentInput.placeholder = 'Enter comment';
+        commentInput.addEventListener('input', () => {
+          saveReviewerValue(rec['No'], reviewer, 'comment', commentInput.value);
+        });
+        commentGroup.appendChild(commentLabel);
+        commentGroup.appendChild(commentInput);
+        // Decision
+        const decisionGroup = document.createElement('div');
+        decisionGroup.className = 'form-group';
+        const decisionLabel = document.createElement('label');
+        decisionLabel.textContent = 'Yes/No/Maybe';
+        const decisionSelect = document.createElement('select');
+        ['','Yes','No','Maybe'].forEach(optVal => {
+          const opt = document.createElement('option');
+          opt.value = optVal;
+          opt.textContent = optVal === '' ? 'Select' : optVal;
+          decisionSelect.appendChild(opt);
+        });
+        decisionSelect.addEventListener('change', () => {
+          saveReviewerValue(rec['No'], reviewer, 'decision', decisionSelect.value);
+        });
+        decisionGroup.appendChild(decisionLabel);
+        decisionGroup.appendChild(decisionSelect);
+        // Amount
+        const amountGroup = document.createElement('div');
+        amountGroup.className = 'form-group';
+        const amountLabel = document.createElement('label');
+        amountLabel.textContent = 'Amount';
+        const amountInput = document.createElement('input');
+        amountInput.type = 'text';
+        amountInput.placeholder = '$0';
+        amountInput.addEventListener('input', () => {
+          let raw = amountInput.value.replace(/[^0-9]/g, '');
+          saveReviewerValue(rec['No'], reviewer, 'amount', raw);
+          if (raw === '') {
+            amountInput.value = '';
+          } else {
+            amountInput.value = '$' + Number(raw).toLocaleString('en-US', { maximumFractionDigits: 0 });
+          }
+        });
+        amountGroup.appendChild(amountLabel);
+        amountGroup.appendChild(amountInput);
+        // Append groups
+        formRow.appendChild(commentGroup);
+        formRow.appendChild(decisionGroup);
+        formRow.appendChild(amountGroup);
+        section.appendChild(formRow);
+        orgDetailsDiv.appendChild(section);
+        // Populate from storage
+        const stored = getReviewerData(rec['No']);
+        if (stored && stored[reviewer]) {
+          const data = stored[reviewer];
+          if (data.comment) commentInput.value = data.comment;
+          if (data.decision) decisionSelect.value = data.decision;
+          if (data.amount) {
+            const rawVal = data.amount;
+            if (rawVal) {
+              amountInput.value = '$' + Number(rawVal).toLocaleString('en-US', { maximumFractionDigits: 0 });
+            }
+          }
+        }
+      });
+    }
+
+    // Save reviewer value into localStorage
+    function saveReviewerValue(no, reviewer, field, value) {
+      const key = 'notes_' + no;
+      let notes = {};
+      try {
+        const stored = localStorage.getItem(key);
+        if (stored) notes = JSON.parse(stored);
+      } catch (err) {
+        notes = {};
+      }
+      if (!notes[reviewer]) notes[reviewer] = {};
+      notes[reviewer][field] = value;
+      localStorage.setItem(key, JSON.stringify(notes));
+    }
+
+    // Retrieve reviewer data for an organization
+    function getReviewerData(no) {
+      const key = 'notes_' + no;
+      try {
+        const stored = localStorage.getItem(key);
+        return stored ? JSON.parse(stored) : null;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    // Export button
+    document.getElementById('export-btn').addEventListener('click', () => {
+      exportData();
+    });
+
+    function exportData() {
+      // Compose export rows with notes
+      const exportRows = dataset.map(rec => {
+        const row = { ...rec };
+        const notes = getReviewerData(rec['No']);
+        ['JT','FW','GP'].forEach(rw => {
+          const data = notes && notes[rw] ? notes[rw] : {};
+          row[`${rw} Comment`] = data.comment || '';
+          row[`${rw} Decision`] = data.decision || '';
+          row[`${rw} Amount`] = data.amount ? Number(data.amount).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : '';
+        });
+        return row;
+      });
+      // Generate HTML table
+      const tableHTML = generateExportTableHTML(exportRows);
+      const newWin = window.open('about:blank','_blank');
+      newWin.document.write('<html><head><title>Exported Data</title>' +
+        '<style>body{font-family: \"Proxima Nova\",\"Segoe UI\",Tahoma,Geneva,Verdana,sans-serif; padding:10px;} table{border-collapse:collapse;width:100%; font-size:0.8rem;} th,td{border:1px solid #ccc;padding:4px;} th{background-color:#e6f3fb;font-weight:bold;} button{margin-bottom:8px;padding:6px 10px;font-size:0.8rem;background-color:#0c426a;color:white;border:none;border-radius:3px;cursor:pointer;} button:hover{background-color:#093655;}</style></head><body>');
+      newWin.document.write('<button id="copyBtn">Copy to Clipboard</button>');
+      newWin.document.write(tableHTML);
+      newWin.document.write('</body></html>');
+      newWin.document.close();
+      newWin.document.getElementById('copyBtn').addEventListener('click', () => {
+        copyTableToClipboard(exportRows);
+        alert('Table copied to clipboard!');
+      });
+      // Generate XLSX
+      const ws = XLSX.utils.json_to_sheet(exportRows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Applications');
+      XLSX.writeFile(wb, 'grant_applications_with_notes.xlsx');
+    }
+
+    function generateExportTableHTML(data) {
+      if (!data || data.length === 0) return '<p>No data to export</p>';
+      const cols = Object.keys(data[0]);
+      let html = '<table id="export-table"><thead><tr>';
+      cols.forEach(col => {
+        html += '<th>' + escapeHtml(col) + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+      data.forEach(row => {
+        html += '<tr>';
+        cols.forEach(col => {
+          const val = row[col] == null ? '' : row[col];
+          html += '<td>' + escapeHtml(String(val)) + '</td>';
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      return html;
+    }
+
+    function copyTableToClipboard(data) {
+      if (!data || data.length === 0) return;
+      const cols = Object.keys(data[0]);
+      const lines = [];
+      lines.push(cols.join('\t'));
+      data.forEach(row => {
+        const vals = cols.map(col => {
+          const v = row[col];
+          return v == null ? '' : String(v).replace(/\n/g, ' ');
+        });
+        lines.push(vals.join('\t'));
+      });
+      const text = lines.join('\n');
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // Initialize
+    renderSidebar();
+  </script>
+</body>
+</html>
